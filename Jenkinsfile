@@ -58,26 +58,16 @@ stage('Деплой на стейджинг') {
     '''
   }
 }
-
+stage('Проверка работоспособности') {
+  steps {
+    input 'Следует ли отправить на продакшн?'
+  }
+}
 stage('Деплой на продакшн') {
   steps {
     sh './deploy.sh prod || { echo "deploy to prod failed"; exit 1; }'
   }
 }
-
-    stage('Проверка работоспособности') {
-      steps {
-        input 'Следует ли отправить на продакшн?'
-      }
-    }
-
-    stage('Деплой на продакшн') {
-      steps {
-        sh './deploy prod || { echo "deploy to prod failed"; exit 1; }'
-      }
-    }
-  }
-
   post {
     always {
       echo 'Это всегда будет выполняться независимо от статуса завершения'
