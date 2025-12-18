@@ -33,33 +33,37 @@ pipeline {
       }
     }
 
-    stage('Деплой на стейджинг') {
-      steps {
-        echo 'Проверка наличия команд'
+stage('Деплой на стейджинг') {
+  steps {
+    echo 'Проверка наличия скриптов'
+    sh '''
+      ls -la
+      [ -f ./deploy.sh ] || { echo "./deploy.sh not found"; exit 1; }
+      [ -f ./smoke-tests.sh ] || { echo "./smoke-tests.sh not found"; exit 1; }
+    '''
 
-        sh '''
-          command -v chmod >/dev/null 2>&1 || echo "chmod not found"
+    echo 'Изменение прав на выполнение скриптов'
+    sh '''
+      chmod u+x ./deploy.sh ./smoke-tests.sh || { echo "chmod failed"; exit 1; }
+    '''
 
-          [ -f ./deploy ]       || echo "./deploy not found"
-          [ -f ./smoke-tests ]  || echo "./smoke-tests not found"
-        '''
+    echo 'Деплой на стейджинг'
+    sh '''
+      ./deploy.sh staging || { echo "deploy failed"; exit 1; }
+    '''
 
-        echo 'Изменение прав на выполнение скриптов'
-        sh '''
-          chmod u+x deploy smoke-tests || { echo "chmod failed"; exit 1; }
-        '''
+    echo 'Выполнение smoke-тестов'
+    sh '''
+      ./smoke-tests.sh || { echo "smoke-tests failed"; exit 1; }
+    '''
+  }
+}
 
-        echo 'Деплой на стейджинг'
-        sh '''
-          ./deploy staging || { echo "deploy failed"; exit 1; }
-        '''
-
-        echo 'Выполнение smoke-тестов'
-        sh '''
-          ./smoke-tests || { echo "smoke-tests failed"; exit 1; }
-        '''
-      }
-    }
+stage('Деплой на продакшн') {
+  steps {
+    sh './deploy.sh prod || { echo "deploy to prod failed"; exit 1; }'
+  }
+}
 
     stage('Проверка работоспособности') {
       steps {
