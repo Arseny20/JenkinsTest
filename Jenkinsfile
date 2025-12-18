@@ -3,7 +3,7 @@ agent any
 environment { 
 DB_URL = 'mysql+pymysql://usr:pwd@host:<port>/db' 
 DISABLE_AUTH = true 
-GOOGLE_ACCESS_KEY_ID = credentials('google-access-key-id') 
+GOOGLE_ACCESS_KEY_ID = credentials('accesss_arseny') 
 } 
 stages { 
 stage("Сборка") { 
@@ -50,7 +50,7 @@ input "Следует ли отправить на продакшн?"
 } 
 stage("Деплой на продакшн") { 
 steps { 
-sh './deploy prod || { echo «deploy to prod failed»; exit 1; }' 
+sh './deploy prod || { echo "deploy to prod failed"; exit 1; }' 
 } 
 } 
 } 
