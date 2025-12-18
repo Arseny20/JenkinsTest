@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-echo «Деплой $1»
+echo "Деплой $1"
