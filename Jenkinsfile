@@ -13,11 +13,13 @@ pipeline {
         echo 'Сборка приложения...'
 
         sh '''
+          set -e
           echo "Этот блок содержит многострочные шаги"
           ls -lh
         '''
 
         sh """
+          set -e
           echo "URL базы данных: ${DB_URL}"
           echo "DISABLE_AUTH: ${DISABLE_AUTH}"
           env
@@ -33,41 +35,54 @@ pipeline {
       }
     }
 
-stage('Деплой на стейджинг') {
-  steps {
-    echo 'Проверка наличия скриптов'
-    sh '''
-      ls -la
-      [ -f ./deploy.sh ] || { echo "./deploy.sh not found"; exit 1; }
-      [ -f ./smoke-tests.sh ] || { echo "./smoke-tests.sh not found"; exit 1; }
-    '''
+    stage('Деплой на стейджинг') {
+      steps {
+        echo 'Проверка наличия скриптов'
+        sh '''
+          set -e
+          ls -la
+          [ -f ./deploy.sh ] || { echo "./deploy.sh not found"; exit 1; }
+          [ -f ./smoke-tests.sh ] || { echo "./smoke-tests.sh not found"; exit 1; }
+        '''
 
-    echo 'Изменение прав на выполнение скриптов'
-    sh '''
-      chmod u+x ./deploy.sh ./smoke-tests.sh || { echo "chmod failed"; exit 1; }
-    '''
+        echo 'Изменение прав на выполнение скриптов'
+        sh '''
+          set -e
+          chmod u+x ./deploy.sh ./smoke-tests.sh || { echo "chmod failed"; exit 1; }
+        '''
 
-    echo 'Деплой на стейджинг'
-    sh '''
-      ./deploy.sh staging || { echo "deploy failed"; exit 1; }
-    '''
+        echo 'Деплой на стейджинг'
+        sh '''
+          set -e
+          ./deploy.sh staging || { echo "deploy failed"; exit 1; }
+        '''
 
-    echo 'Выполнение smoke-тестов'
-    sh '''
-      ./smoke-tests.sh || { echo "smoke-tests failed"; exit 1; }
-    '''
+        echo 'Выполнение smoke-тестов'
+        sh '''
+          set -e
+          ./smoke-tests.sh || { echo "smoke-tests failed"; exit 1; }
+        '''
+      }
+    }
+
+    stage('Проверка работоспособности') {
+      steps {
+        input 'Следует ли отправить на продакшн?'
+      }
+    }
+
+    stage('Деплой на продакшн') {
+      steps {
+        sh '''
+          set -e
+          [ -f ./deploy.sh ] || { echo "./deploy.sh not found"; exit 1; }
+          chmod u+x ./deploy.sh || { echo "chmod failed"; exit 1; }
+          ./deploy.sh prod || { echo "deploy to prod failed"; exit 1; }
+        '''
+      }
+    }
   }
-}
-stage('Проверка работоспособности') {
-  steps {
-    input 'Следует ли отправить на продакшн?'
-  }
-}
-stage('Деплой на продакшн') {
-  steps {
-    sh './deploy.sh prod || { echo "deploy to prod failed"; exit 1; }'
-  }
-}
+
   post {
     always {
       echo 'Это всегда будет выполняться независимо от статуса завершения'
